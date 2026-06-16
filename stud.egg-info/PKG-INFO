@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: stud
+Version: 0.1.0
+Summary: VCS + package manager + workflows + AI in one tool
+Requires-Python: >=3.10
+Requires-Dist: pyyaml
+Provides-Extra: rich
+Requires-Dist: rich>=13.0; extra == "rich"
+Dynamic: requires-python

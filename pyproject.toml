@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stud"
+version = "0.1.0"
+description = "VCS + package manager + workflows + AI in one tool"
+requires-python = ">=3.10"
+dependencies = ["pyyaml"]
+
+[project.optional-dependencies]
+rich = ["rich>=13.0"]
+
+[project.scripts]
+stud = "stud.cli.main:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

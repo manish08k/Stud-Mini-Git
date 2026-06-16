@@ -1,0 +1,2 @@
+[console_scripts]
+stud = stud.cli.main:main
