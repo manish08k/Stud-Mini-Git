@@ -15,6 +15,7 @@ from .commands import (
     register_workflows,
     register_ai,
     register_security,
+    register_remote,
 )
 
 
@@ -35,6 +36,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_workflows(subparsers)
     register_ai(subparsers)
     register_security(subparsers)
+    register_remote(subparsers)
 
     # completion
     comp = subparsers.add_parser("completion", help="Print shell completion script")

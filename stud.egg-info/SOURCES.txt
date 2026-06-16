@@ -24,6 +24,7 @@ stud/cli/wizards.py
 stud/cli/commands/__init__.py
 stud/cli/commands/ai_commands.py
 stud/cli/commands/package_commands.py
+stud/cli/commands/remote_commands.py
 stud/cli/commands/security_commands.py
 stud/cli/commands/vcs_commands.py
 stud/cli/commands/workflow_commands.py

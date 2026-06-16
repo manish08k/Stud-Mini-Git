@@ -3,6 +3,7 @@ from .package_commands import register as register_packages
 from .workflow_commands import register as register_workflows
 from .ai_commands import register as register_ai
 from .security_commands import register as register_security
+from .remote_commands import register as register_remote
 
 __all__ = [
     "register_vcs",
@@ -10,4 +11,5 @@ __all__ = [
     "register_workflows",
     "register_ai",
     "register_security",
+    "register_remote",
 ]
