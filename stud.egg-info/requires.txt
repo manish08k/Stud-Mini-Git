@@ -1,4 +1,0 @@
-pyyaml
-
-[rich]
-rich>=13.0
