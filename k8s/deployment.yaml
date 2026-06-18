@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stud-backend
+  namespace: stud
+  labels:
+    app: stud-backend
+    version: "2.0"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: stud-backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0           # zero-downtime deployments
+  template:
+    metadata:
+      labels:
+        app: stud-backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: stud-backend
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: api
+          image: ghcr.io/YOUR_ORG/stud-backend:latest   # replaced by CI
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: APP_ENV
+              value: production
+            - name: STUD_SERVER_DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: stud-secrets
+                  key: DATABASE_URL
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stud-secrets
+                  key: SECRET_KEY
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: stud-secrets
+                  key: REDIS_URL
+            - name: KAFKA_ENABLED
+              value: "true"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka:9092"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://otel-collector:4317"
+            - name: LOG_LEVEL
+              value: INFO
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          volumeMounts:
+            - name: repo-data
+              mountPath: /data
+      volumes:
+        - name: repo-data
+          persistentVolumeClaim:
+            claimName: stud-repo-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stud-backend
+  namespace: stud
+spec:
+  selector:
+    app: stud-backend
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: stud-backend-hpa
+  namespace: stud
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: stud-backend
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80

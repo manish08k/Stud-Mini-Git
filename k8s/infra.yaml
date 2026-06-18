@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: stud
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: stud-repo-pvc
+  namespace: stud
+spec:
+  accessModes:
+    - ReadWriteMany          # RWX needed for multi-replica access
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 50Gi
+---
+# Secret values should be injected via Sealed Secrets / Vault in production.
+# This template shows the expected keys.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: stud-secrets
+  namespace: stud
+type: Opaque
+stringData:
+  DATABASE_URL: "postgresql+psycopg2://stud:CHANGE_ME@postgres:5432/stud"
+  SECRET_KEY: "CHANGE_ME_64_CHARS_RANDOM"
+  REDIS_URL: "redis://redis:6379/0"
+  ANTHROPIC_API_KEY: ""
+  OPENAI_API_KEY: ""
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: stud-backend
+  namespace: stud
