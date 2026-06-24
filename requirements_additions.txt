@@ -1,0 +1,4 @@
+# Add these to backend/requirements.txt
+
+python-jose[cryptography]==3.3.0      # JWT encode/decode
+prometheus-fastapi-instrumentator==0.9.1  # /metrics endpoint

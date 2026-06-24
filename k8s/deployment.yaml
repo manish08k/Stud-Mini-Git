@@ -61,6 +61,18 @@ spec:
               value: "http://otel-collector:4317"
             - name: LOG_LEVEL
               value: INFO
+            - name: S3_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: stud-secrets
+                  key: S3_BUCKET
+                  optional: true
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: stud-secrets
+                  key: AWS_REGION
+                  optional: true
           resources:
             requests:
               cpu: 250m

@@ -1,13 +1,14 @@
 import time
 
 from sqlalchemy import (
+    Boolean,
     Column,
     Float,
     ForeignKey,
     Integer,
     String,
+    Text,
     UniqueConstraint,
-    Boolean,
 )
 from sqlalchemy.orm import relationship
 
@@ -23,10 +24,12 @@ class User(Base):
     created_at = Column(Float, default=time.time)
 
     tokens = relationship("Token", back_populates="user", cascade="all, delete-orphan")
+    refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
     repos = relationship("Repository", back_populates="owner", cascade="all, delete-orphan")
 
 
 class Token(Base):
+    """Personal access token (PAT / opaque)."""
     __tablename__ = "tokens"
 
     id = Column(Integer, primary_key=True)
@@ -39,6 +42,20 @@ class Token(Base):
     user = relationship("User", back_populates="tokens")
 
 
+class RefreshToken(Base):
+    """Stored refresh tokens for JWT rotation."""
+    __tablename__ = "refresh_tokens"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    token_hash = Column(String(128), unique=True, nullable=False, index=True)
+    created_at = Column(Float, default=time.time)
+    expires_at = Column(Float, nullable=False)
+    revoked = Column(Boolean, default=False)
+
+    user = relationship("User", back_populates="refresh_tokens")
+
+
 class Repository(Base):
     __tablename__ = "repositories"
     __table_args__ = (UniqueConstraint("owner_id", "name", name="uq_owner_repo_name"),)
@@ -49,6 +66,7 @@ class Repository(Base):
     is_private = Column(Boolean, default=False)
     default_branch = Column(String(128), default="main")
     created_at = Column(Float, default=time.time)
+    deleted_at = Column(Float, nullable=True)  # soft delete
 
     owner = relationship("User", back_populates="repos")
     collaborators = relationship(
@@ -67,3 +85,15 @@ class Collaborator(Base):
 
     repo = relationship("Repository", back_populates="collaborators")
     user = relationship("User")
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True)
+    actor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    actor = Column(String(64), nullable=False)
+    action = Column(String(64), nullable=False, index=True)
+    resource = Column(String(256), nullable=False)
+    detail = Column(Text, nullable=True)
+    created_at = Column(Float, default=time.time, index=True)

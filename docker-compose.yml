@@ -12,6 +12,11 @@ services:
       REDIS_URL: redis://redis:6379/0
       KAFKA_ENABLED: "true"
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      S3_BUCKET: stud-repos
+      AWS_ACCESS_KEY_ID: studadmin
+      AWS_SECRET_ACCESS_KEY: studpassword
+      AWS_ENDPOINT_URL: http://minio:9000
+      AWS_REGION: us-east-1
     depends_on:
       db:
         condition: service_healthy
@@ -72,7 +77,38 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     restart: unless-stopped
 
-  # ── jaeger (traces) ───────────────────────────────────────────────────────────
+  # ── minio (S3-compatible object storage for local dev) ───────────────────────
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # MinIO Console UI
+    environment:
+      MINIO_ROOT_USER: studadmin
+      MINIO_ROOT_PASSWORD: studpassword
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── minio bucket init ─────────────────────────────────────────────────────────
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 studadmin studpassword &&
+      mc mb --ignore-existing local/stud-repos &&
+      echo 'bucket ready'
+      "
+    restart: "no"
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
@@ -85,3 +121,4 @@ services:
 volumes:
   pg_data:
   repo_data:
+  minio_data:
